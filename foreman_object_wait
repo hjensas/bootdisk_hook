@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+# Wait for foreman host object to be available
+#   ARG1 = Foreman hook event
+#   ARG2 = Foreman object name (FQDN)
+#   ARG3 = Foreman hook object json file
+#
+HOOK_EVENT=$1
+HOOK_OBJECT=$2
+HOOK_OBJECT_FILE=$3
+
+
+#
+# Source the configuration file
+#
+source /etc/foreman/hooks/foreman_bootdisk.conf
+
+#
+# Source foreman bootdisk log functions
+#
+source ${HOOK_DIR}/functions/hook_functions.sh
+
+#
+# Wait for foreman host
+#  Run a loop, with incrementing delay until host is available
+#  in foreman.
+#
+#    ARG1 = Foreman host name
+#
+function foreman_object_wait() {
+  local object=$1
+  local retry=0
+  while [ $retry -lt $MAX_RETRY_ATTEMPTS ]; do
+    hammer --output silent host info --name ${object} && 
+      { log_debug "Foreman host object ${object} is available"; return 0; }
+    retry=$[$retry+1]
+    log_info "Waiting for foreman host object. $retry/$MAX_RETRY_ATTEMPTS"
+    sleep $[$retry * $BASE_RETRY_INTERVAL]
+  done
+  log_err "Timeout waiting for forman host object to be created."
+  return 1
+}
+
+foreman_object_wait $HOOK_OBJECT && exit 0 || exit 1

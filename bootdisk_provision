@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# Foreman Hook to provision hosts using the foreman bootdisk
+#   Connects foreman bootdisk to the host, and configure boot
+#   options to boot the foreman bootdisk image.
+#
+#  Arguments
+#    ARG1 = HOOK_EVENT       (create, after_build, after_provision, destroy)
+#    ARG2 = HOOK_OBJECT      (Foreman host FQDN)
+#    ARG3 = HOOK_OBJECT_FILE (Tempfile containing hook data in json)
+#
+HOOK_EVENT=$1
+HOOK_OBJECT=$2
+HOOK_OBJECT_FILE=$3
+
+#
+# Source the configuration file
+#
+source /etc/foreman/hooks/foreman_bootdisk.conf
+
+#
+# Source functions
+#
+source ${HOOK_DIR}/functions/hook_functions.sh
+source ${HOOK_DIR}/functions/bootdisk_functions.sh
+
+#
+# Source the model specific functions
+#
+PROVIDERS_DIR=${HOOK_DIR}/providers
+#source ${PROVIDERS_DIR}/libvirt.sh
+#source ${PROVIDERS_DIR}/vmware.sh
+source ${PROVIDERS_DIR}/rhev.sh
+#source ${PROVIDERS_DIR}/ovirt.sh
+#source ${PROVIDERS_DIR}/idrac.sh
+
+
+case "$HOOK_EVENT" in
+  create|after_build)
+    resolve_provider           # Figure out what is the provider behind the
+                               # host. And set global variables.
+
+    enable_provider            # Make foreman bootdisk available to the
+                               # provider. Upload bootdisk to: 
+                               #   * RHEV ISO domain
+                               #   * vmware datastore
+                               #   * NFS/CIFS/SCP for others?
+
+    bootdisk_provision         # Connect the bootdisk to the host, configure
+                               # boot options, and power actions.
+  ;;
+  after_provision)
+    resolve_provider
+    bootdisk_post_provision
+    disable_provider
+  ;;
+  destroy)
+    # Clean up?
+    # * Disconnect bootdisk from host if baremetal?
+    # * Reconfigure boot options if baremetal?
+  ;;
+  *)
+    echo "Hook Usage: run_hooks {create|after_build|after_provision}"
+    exit 1
+  ;;
+esac
+
+exit 0
+

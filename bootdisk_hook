@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#
+# Foreman Hook arguments
+#
+HOOK_EVENT=$1   # Event name (create, after_build, after_provision, destroy..)
+HOOK_OBJECT=$2  # FQDN of host
+
+#
+# Create a temp file to store the hook's json data
+#
+#  Since we will run the hook commands as background tasks,
+#    the last task should be to delete the temp file.
+#
+HOOK_OBJECT_FILE=$(mktemp -t foreman_hooks.XXXXXXXXXX)
+cat > $HOOK_OBJECT_FILE
+
+#
+# Source the configuration file
+#
+source /etc/foreman/hooks/foreman_bootdisk.conf
+
+#
+# Source functions
+#
+source ${HOOK_DIR}/functions/hook_functions.sh
+source ${HOOK_DIR}/functions/bootdisk_functions.sh
+
+#
+# If DHCP is enabled for the subnet
+# we do not want to run the hook...
+#
+is_dhcp_enabled &&
+  { log_debug "DHCP is enabled, not running bootdisk hook"; exit 0; } ||
+  { log_debug "DHCP is disabled, running bootdisk hook"; } 
+
+
+#
+# 
+#
+OPTS="${HOOK_EVENT} ${HOOK_OBJECT} ${HOOK_OBJECT_FILE}"
+CMD_FOREMAN_OBJECT_WAIT="${HOOK_DIR}/foreman_object_wait ${OPTS}"
+CMD_BOOTDISK_GET="${HOOK_DIR}/bootdisk_get ${OPTS}"
+CMD_BOOTDISK_PROVISION="${HOOK_DIR}/bootdisk_provision ${OPTS}"
+CMD_RM_HOOK_OBJECT_FILE="rm -f $HOOK_OBJECT_FILE"
+
+log_debug "Command: $CMD_FOREMAN_OBJECT_WAIT"
+log_debug "Command: $CMD_BOOTDISK_GET"
+log_debug "Command: $CMD_BOOTDISK_PROVISION"
+log_debug "Command: $CMD_RM_HOOK_OBJECT_FILE"
+
+
+case "$HOOK_EVENT" in
+  create)
+    # If build mode is not enabled, we do not want to run the hook...
+    is_build_enabled &&
+      { log_debug "Build mode enabled, running bootdisk hook"; } ||
+      { log_debug "Build mode disabled, not running bootdisk hook"; exit 0; }
+    # Run the commands as background task.
+    # Only continue if previous command succeded.
+    nohup /bin/bash \
+      -c "${CMD_FOREMAN_OBJECT_WAIT} &&
+          ${CMD_BOOTDISK_GET} &&
+          ${CMD_BOOTDISK_PROVISION} &&
+          ${CMD_RM_HOOK_OBJECT_FILE} || ${CMD_RM_HOOK_OBJECT_FILE}" \
+          > /dev/null 2>&1 &
+                                   # ^^ Clean up the tempfile no
+                                   #    matter the result of previous
+                                   #    commands.
+    disown
+  ;;
+  after_build)
+    nohup /bin/bash \
+      -c "${CMD_BOOTDISK_GET} &&
+          ${CMD_BOOTDISK_PROVISION} &&
+          ${CMD_RM_HOOK_OBJECT_FILE} || ${CMD_RM_HOOK_OBJECT_FILE}" \
+          > /dev/null 2>&1 &
+  ;;
+  after_provision)
+    nohup /bin/bash \
+      -c "${CMD_BOOTDISK_PROVISION} &&
+          ${CMD_RM_HOOK_OBJECT_FILE} || ${CMD_RM_HOOK_OBJECT_FILE}" \
+          > /dev/null 2>&1 &
+  ;;
+  destroy)
+    # NOOP
+  ;;
+  *)
+    log_info "Usage: {create|after_build|after_provision|destroy} obj < data"
+    exit 1
+  ;;
+esac
+
+exit 0
+

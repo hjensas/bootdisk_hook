@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# This script will download the foreman bootdisk for a specific host.
+# Arguments:
+#   ARG1 = Foreman hook event
+#   ARG2 = Foreman object name (FQDN)
+#   ARG3 = Foreman hook object json file
+#
+HOOK_EVENT=$1
+HOOK_OBJECT=$2
+HOOK_OBJECT_FILE=$3
+
+#
+# Source the configuration file
+#
+source /etc/foreman/hooks/foreman_bootdisk.conf
+
+#
+# Source foreman bootdisk helper functions
+#
+source ${HOOK_DIR}/functions/hook_functions.sh
+
+#
+# If the bootdisk store directory does not exist, create it
+#
+function boot_disk_store() {
+  # If bootdisk store does not exist, create it.
+  if ! [ -d "$BOOT_DISK_STORE" ]; then
+    mkdir --parents $BOOT_DISK_STORE &&
+      { log_info "Directory $BOOT_DISK_STORE created"; return 0; } ||
+      { log_err "Unable to create BOOT_DISK_STORE directory"; return 1; }
+  fi
+  return 0
+}
+
+#
+# Get the bootdisk
+#
+function bootdisk_get() {
+  local hostname=$1
+  if [ "$USE_FULL_HOST_IMAGE" == "true" ]; then
+    hammer --output silent bootdisk host --full true \
+      --host ${hostname} --file ${BOOT_DISK_STORE}/${hostname}.iso &&
+        { log_info "Succesfully downloaded foreman bootdisk"; return 0; } ||
+        { log_err "Failed downloading foreman bootdisk"; return 1; }
+  else
+    hammer --output silent bootdisk host \
+      --host ${hostname} --file ${BOOT_DISK_STORE}/${hostname}.iso &&
+        { log_info "Succesfully downloaded foreman bootdisk"; return 0; } ||
+        { log_err "Failed downloading foreman bootdisk"; return 1; }
+  fi
+}
+
+boot_disk_store &&
+bootdisk_get $HOOK_OBJECT && exit 0 || exit 1
+
