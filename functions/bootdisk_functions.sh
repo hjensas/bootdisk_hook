@@ -164,7 +164,7 @@ function bootdisk_post_provision() {
         exit 1
       ;;
       RHEV)
-        rhev_post_provision $HOOK_EVENT $CR_URL $CR_USER $CR_PASSWD
+        rhev_post_provision $HOOK_OBJECT $HOOK_EVENT $CR_URL $CR_USER $CR_PASSWD
       ;;
       Ovirt)
         #ovirt_provision
