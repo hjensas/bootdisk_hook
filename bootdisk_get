@@ -34,7 +34,7 @@ function boot_disk_store() {
 }
 
 #
-# Get the bootdisk
+# Get the bootdisk iso image
 #
 function bootdisk_get() {
   local hostname=$1
@@ -51,6 +51,31 @@ function bootdisk_get() {
   fi
 }
 
-boot_disk_store &&
-bootdisk_get $HOOK_OBJECT && exit 0 || exit 1
+#
+# Clean up, delete the bootdisk iso image
+#
+function bootdisk_rm() {
+  local hostname=$1
+  rm -f ${BOOT_DISK_STORE}/${hostname}.iso &&
+    { log_info "Succesfully deleted foreman bootdisk from bootdisk store"; return 0; } ||
+    { log_err "Failed deleting foreman bootdisk from bootdisk store"; return 1; }
+}
 
+case "$HOOK_EVENT" in
+  create|after_build)
+    boot_disk_store &&
+    bootdisk_get $HOOK_OBJECT || exit 1
+  ;;
+  after_provision)
+    bootdisk_rm HOOK_OBJECT || exit 1
+  ;;
+  destroy)
+    # NOOP
+  ;;
+  *)
+    log_info "Usage: {create|after_build|after_provision|destroy} obj < data"
+    exit 1
+  ;;
+esac
+
+exit 0

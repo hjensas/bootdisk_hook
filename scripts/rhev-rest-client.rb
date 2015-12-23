@@ -136,13 +136,13 @@ end
 
 def vm_boot_once_cdrom(rest_resource, vm_uuid, iso_file)
   begin
-    loginfo('INFO: Starting VM ' + vm_uuid + ' with one time boot.dev=cdrom ' + iso_file)
-    action = '<action><pause>false</pause><vm><stateless>true</stateless><os><boot dev="cdrom"/></os><cdroms><cdrom><file id="' + iso_file + '"/></cdrom></cdroms></vm></action>'
+    loginfo('INFO: VM action start, ' + vm_uuid + ', with one time boot.dev=cdrom ' + iso_file)
+    action = '<action><pause>false</pause><vm><stateless>false</stateless><os><boot dev="cdrom"/></os><cdroms><cdrom><file id="' + iso_file + '"/></cdrom></cdroms></vm></action>'
     rest_resource['/vms/' + vm_uuid + '/start'].post action,
       :content_type => 'application/xml',
       :accept_type  => 'application/xml'
   rescue Exception => e
-    logerr('ERROR: Failed performing boot_once_cdrom action on vm' + vm_uuid)
+    logerr('ERROR: VM action start, with boot_once_cdrom failed for vm' + vm_uuid)
     logerr(e.message)
     logerr(e.backtrace.inspect)
   end
@@ -150,6 +150,7 @@ end
 
 def vm_start(rest_resource, vm_uuid)
   begin
+    loginfo('INFO: VM action start,' + vm_uuid)
     action = '<action></action>'
     rest_resource['/vms/' + vm_uuid + '/start'].post action,
       :content_type => 'application/xml',
@@ -181,16 +182,16 @@ begin
         loginfo('INFO: Stopping VM ' + options[:vm_uuid]) 
         vm_stop(rest_client, options[:vm_uuid])  
         wait_for_vm_status(rest_client, options[:vm_uuid], 'down')
-        sleep(5) # If we try to start the vm too quickly after stopping it, we might recive 400 Bad Request
+        sleep(10) # If we try to start the vm too quickly after stopping it, we might recive 400 Bad Request
       end
       # The VM is down, configure one time boot and start it. 
       vm_boot_once_cdrom(rest_client, options[:vm_uuid], options[:iso_file])
 
-    when 'before_provision'
+    when 'after_provision'
       loginfo('INFO: Begin ' + options[:event])
       wait_for_vm_status(rest_client, options[:vm_uuid], 'down')
       # The VM is down, configure one time boot and start it. 
-      sleep(5) # If we try to start the vm too quickly after stopping it, we might recive 400 Bad Request
+      sleep(10) # If we try to start the vm too quickly after stopping it, we might recive 400 Bad Request
       vm_start(rest_client, options[:vm_uuid])
       loginfo('VM: ' + options[:vm_uuid]  + ' before_provision task complete.')
 

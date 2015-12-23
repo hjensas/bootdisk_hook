@@ -79,6 +79,7 @@ case "$HOOK_EVENT" in
   after_provision)
     nohup /bin/bash \
       -c "${CMD_BOOTDISK_PROVISION} &&
+          ${CMD_BOOTDISK_GET} &&
           ${CMD_RM_HOOK_OBJECT_FILE} || ${CMD_RM_HOOK_OBJECT_FILE}" \
           > /dev/null 2>&1 &
   ;;
