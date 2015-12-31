@@ -53,7 +53,7 @@ function iso_domain_delete() {
 #
 #
 #
-function rhev_boot_once() {
+function ovirt_boot_once() {
   local hook_object=$1
   local event=$2
   local cr_url=$3
@@ -80,7 +80,7 @@ function rhev_boot_once() {
 #
 # Post provisioning tasks
 #
-function rhev_post_provision() {
+function ovirt_post_provision() {
   local hook_object=$1
   local event=$2
   local cr_url=$3

@@ -76,7 +76,7 @@ def decrypt_field(str)
   return str
 end
 
-def setup_rest_client(cr_url, cr_user, cr_passwd) # Setup the rest-client resource
+def setup_ovirt_rest_client(cr_url, cr_user, cr_passwd) # Setup the rest-client resource
   begin
     resource = RestClient::Resource.new(cr_url, cr_user, decrypt_field(cr_passwd))
   rescue Exception => e
@@ -162,9 +162,9 @@ end
 
 # Setup the rest client resource
 begin
-  rest_client = setup_rest_client(options[:cr_url],
-                                  options[:cr_user],
-                                  options[:cr_passwd])
+  rest_client = setup_rhev_rest_client(options[:cr_url],
+                                       options[:cr_user],
+                                       options[:cr_passwd])
 rescue Exception => e
   logerr(e.message)
   logerr(e.backtrace.inspect)

@@ -30,29 +30,20 @@ source ${HOOK_DIR}/functions/bootdisk_functions.sh
 PROVIDERS_DIR=${HOOK_DIR}/providers
 #source ${PROVIDERS_DIR}/libvirt.sh
 #source ${PROVIDERS_DIR}/vmware.sh
-source ${PROVIDERS_DIR}/rhev.sh
-#source ${PROVIDERS_DIR}/ovirt.sh
+source ${PROVIDERS_DIR}/ovirt.sh
 #source ${PROVIDERS_DIR}/idrac.sh
 
 
 case "$HOOK_EVENT" in
   create|after_build)
-    resolve_provider           # Figure out what is the provider behind the
+    provider_resolve           # Figure out what is the provider behind the
                                # host. And set global variables.
-
-    enable_provider            # Make foreman bootdisk available to the
-                               # provider. Upload bootdisk to: 
-                               #   * RHEV ISO domain
-                               #   * vmware datastore
-                               #   * NFS/CIFS/SCP for others?
-
-    bootdisk_provision         # Connect the bootdisk to the host, configure
+    provider_provision         # Connect the bootdisk to the host, configure
                                # boot options, and power actions.
   ;;
   after_provision)
-    resolve_provider
-    bootdisk_post_provision
-    disable_provider
+    provider_resolve
+    provider_post_provision
   ;;
   destroy)
     # Clean up?
