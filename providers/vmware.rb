@@ -257,9 +257,10 @@ def upload_iso(vm_mob_ref, local_iso_path, remote_iso_filename)
     config_path = get_vm_config_path(vm_mob_ref)
 
     # Upload file to datastore
-    loginfo('INFO: Uplaoding ISO to dataststore: ' + config_path + '/' + remote_iso_filename)
     ds_mob_ref.upload(config_path + '/' + remote_iso_filename,
                              local_iso_path)
+    loginfo('INFO: ISO successfylly uploaded to dataststore: ' \
+             + config_path + '/' + remote_iso_filename)
   rescue Exception => e
     logerr(e.message)
     logerr(e.backtrace.inspect)    
@@ -301,10 +302,10 @@ def reconf_vm_cdrom_add_boot_cd(vm_mob_ref, iso_file)
         )
       ]
     )
-    loginfo('INFO: Re-config vm: ' + vm_mob_ref.name + \
-                   'add cdrom, set bootdev: cd')
+    loginfo('INFO: Re-config vm: ' + vm_mob_ref.name + ' ' \
+            + 'add cdrom, set bootdev: cd')
     vm_mob_ref.ReconfigVM_Task(spec: machine_conf_spec).wait_for_completion
-    loginfo('INFO: Re-config vm: ' + vm_mob_ref.name + 'task complete')
+    loginfo('INFO: Re-config vm task success for: ' + vm_mob_ref.name)
   rescue Exception => e
     logerr(e.message)
     logerr(e.backtrace.inspect) 
@@ -332,11 +333,14 @@ end
 def reconf_vm_cdrom_remove_boot_hd(vm_mob_ref, cdrom_obj)
   begin
     # Virtual Machine config spec to remove cdrom device
+    puts cdrom_obj.inspect
     machine_conf_spec = RbVmomi::VIM.VirtualMachineConfigSpec(
       deviceChange: [{
         operation: 'remove',
         device: RbVmomi::VIM::VirtualCdrom(
-          key: cdrom_obj.key
+          key: cdrom_obj.key,
+          controllerKey: cdrom_obj.controllerKey,
+          unitNumber: cdrom_obj.unitNumber
         )
       }],
       extraConfig: [
@@ -349,7 +353,7 @@ def reconf_vm_cdrom_remove_boot_hd(vm_mob_ref, cdrom_obj)
     loginfo('INFO: Re-config vm: ' + vm_mob_ref.name + ' ' \
             + 'remove cdrom, set bootdev: hd')
     vm_mob_ref.ReconfigVM_Task(spec: machine_conf_spec).wait_for_completion
-    loginfo('INFO: Re-config vm: ' + vm_mob_ref.name + 'task complete')
+    loginfo('INFO: Re-config vm task success for: ' + vm_mob_ref.name)
     
   rescue Exception => e
     logerr(e.message)
@@ -366,7 +370,8 @@ def wait_for_vm_state(vm_mob_ref, state)
       current_state = vm_mob_ref.runtime.powerState
       if current_state != state
         retries += 1
-        loginfo('Waiting for vm ' + vm_mob_ref.name + ' current state: ' + current_state  + ' tochange...')
+        loginfo('Waiting for vm ' + vm_mob_ref.name + ' current state: ' \
+                + current_state  + ' tochange...')
         sleep(2 * retries)
       else
         return state
@@ -376,19 +381,19 @@ def wait_for_vm_state(vm_mob_ref, state)
   rescue Exception => e
     logerr(e.message)
     logerr(e.backtrace.inspect)
-    raise 'Failed wait for vm status change.'
+    raise 'Failed while waiting for vm status change.'
   end
 end
 
 def vm_action_start(vm_mob_ref)
   begin
-    loginfo('INFO: Action start vm: ' + vm_mob_ref.name)
     state = vm_mob_ref.runtime.powerState
     if state == 'poweredOn'
       loginfo('INFO: vm: ' + vm_mob_ref.name + ' already powered on')
     else
       vm_mob_ref.PowerOnVM_Task.wait_for_completion
-      loginfo('INFO: Action start vm: ' + vm_mob_ref.name + ' completed successfylly')
+      loginfo('INFO: Action start vm: ' + vm_mob_ref.name + ' ' \
+              + 'completed successfylly')
     end
   rescue Exception => e
     logerr(e.message)
@@ -399,13 +404,13 @@ end
 
 def vm_action_stop(vm_mob_ref)
   begin
-    loginfo('INFO: Action stop vm: ' + vm_mob_ref.name)
     state = vm_mob_ref.runtime.powerState
     if state == 'poweredOff'
       loginfo('INFO: vm: ' + vm_mob_ref.name + ' already powered off')
     else
       vm_mob_ref.PowerOffVM_Task.wait_for_completion
-      loginfo('INFO: Action stop vm: ' + vm_mob_ref.name + ' completed succesfylly')
+      loginfo('INFO: Action stop vm: ' + vm_mob_ref.name + ' ' \
+              + 'completed succesfully')
     end
   rescue Exception => e
     logerr(e.message)
@@ -416,10 +421,10 @@ end
 
 def delete_iso_from_datastore(vim_connection, datacenter, path)
   begin
-    loginfo('INFO: Deleting file: ' + path)
     file_manager = vim_connection.serviceContent.fileManager
     file_manager.DeleteDatastoreFile_Task(
       name: path, datacenter: datacenter).wait_for_completion
+    loginfo('INFO: ISO image: ' + path + ' succesfully deleted')
   rescue Exception => e
     logerr(e.message)
     logerr(e.backtrace.inspect)
@@ -466,8 +471,8 @@ begin
     when 'after_provision'
       loginfo('INFO: Begin ' + options[:event])
       cdrom_obj = get_cdrom_backed_by_iso(vm_mob_ref, iso_file_name)
-      reconf_vm_cdrom_remove_boot_hd(vm_mob_ref, cdrom_obj)
       wait_for_vm_state(vm_mob_ref, 'poweredOff')
+      reconf_vm_cdrom_remove_boot_hd(vm_mob_ref, cdrom_obj)
       vm_action_start(vm_mob_ref)
       delete_iso_from_datastore(vim_connection, dc_mob_ref,
                                 cdrom_obj.backing.fileName)

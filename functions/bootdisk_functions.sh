@@ -54,7 +54,7 @@ function provider_provision() {
       Libvirt)
         libvirt_provision
       ;;
-      Vmware)
+      VMWare)
         ${HOOK_DIR}/providers/vmware.rb \
           --event $HOOK_EVENT \
           --crid $CR_ID \
