@@ -1,8 +1,37 @@
 # bootdisk_hook
 Hook scripts for Foreman/Red Hat Satellite to provision hosts using the foreman bootdisk host image.
 
+## Backround
+When DHCP servers are not available in all subnets the foreman bootdisk ISO
+imaga can be used to bootstrap a systems and start a kickstart installation.
+
+To make the process of provisioning systems automatic these hooks will
+automate the following tasks:
+
+# When a host is created, or placed in build mode the hook will:
+1. Download the bootdisk ISO from satellite
+2. For compute resources, upload the ISO to: RHEV ISO Domain, VMWare datastore etc.
+3. Connect the bootdisk ISO image to the host.
+4. Configure the host to boot from CD-Rom.
+
+# When the kicstart reports to foreman that the host is built
+1. Wait for the VM to shutdown. (Kickstart need to be configured to do a poweroff, not a reboot)
+2. Remove/Disconnect/Unmount the ISO image from the host.
+3. Reconfigure the host to boot from hard drive.
+4. Start the host.
+
+## Barematal
+
+The scripts in this repo does not contain any baremetal support, but adding such support using
+hardware vendor remote management (BMC) is possible. 
+
+## RHEV
+
+TODO
 
 ## VMWare
+
+TODO
 
 ### Example log output, when bootdisk_hook provisions VMWare vm using the foreman bootdisk
 ```
