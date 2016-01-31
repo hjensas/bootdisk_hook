@@ -27,6 +27,11 @@ source ${HOOK_DIR}/functions/hook_functions.sh
 source ${HOOK_DIR}/functions/bootdisk_functions.sh
 
 #
+# Check if Build is enabled, if not we should just exit
+#
+# TODO
+
+#
 # If DHCP is enabled for the subnet
 # we do not want to run the hook...
 #
