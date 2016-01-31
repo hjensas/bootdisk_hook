@@ -47,7 +47,7 @@ function provider_resolve() {
 
 
 #
-#
+# Provision the host, call the correct script for the provider
 #
 function provider_provision() {
     case "$CR_PROVIDER" in
