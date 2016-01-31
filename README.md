@@ -8,11 +8,11 @@ Because the hook needs to be started at create event, the hook has to fork a bac
 # Table of Contents
 * [Background](#background)
 * [Installation](#installation)
-  * [Create user in Foreman/Satellite 6](#create user in foreman/satellite 6)
-  * [Configure hammer to use our user](#configure hammer to use our user)
+  * [Create user in Foreman/Satellite 6](#foreman-user)
+  * [Configure hammer to use our user](#hammer-passwd)
   * [Configure sudo](#configure sudo)
 
-## Backround
+## <a id="background"></a>Backround
 When DHCP servers are not available in all subnets the foreman bootdisk ISO
 imaga can be used to bootstrap a systems and start a kickstart installation.
 
@@ -31,9 +31,9 @@ automate the following tasks:
 3. Reconfigure the host to boot from hard drive.
 4. Start the host.
 
-## Installation
+## <a id="installation"></a>Installation
 
-### Create user in Foreman/Satellite 6
+### <a id="foreman-user"></a>Create user in Foreman/Satellite 6
 
 The hooks use hammer and the Foreman/Satellite 6 REST API, for this we create a user for this instead of using the admin account.
 
@@ -58,7 +58,7 @@ hammer user add-role --login bootdisk2 --role "View hosts"
 hammer user add-role --login bootdisk2 --role "Boot disk access"
 ```
 
-### Configure hammer to use our user
+### <a id="hammer-passwd"></a>Configure hammer to use our user
 
 The hook is running as user foreman, we need to setup hammer cli_config for this user to use the bootdisk user, and not prompt for a password.
 
