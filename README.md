@@ -141,8 +141,9 @@ echo "foreman ALL=(vdsm) NOPASSWD:/bin/rm" >> /etc/sudoers.d/foreman-hooks
 
 ```
 echo "rhevm.lnx.example.com:/var/lib/exports/iso /iso_domain   nfs _netdev,defaults 0 0" >> /etc/fstab
-```
 
+mount -a
+```
 
 ## <a id="config-file"></a>Configuration file
 
@@ -236,6 +237,7 @@ objects and subdirectories for events. In this case we need to create the follow
 ln -s /usr/share/foreman/config/bootdisk_hook/bootdisk_hook host/managed/create/20_bootdisk_hook
 ln -s /usr/share/foreman/config/bootdisk_hook/bootdisk_hook host/managed/after_provision/20_bootdisk_hook
 ln -s /usr/share/foreman/config/bootdisk_hook/bootdisk_hook host/managed/after_build/20_bootdisk_hook
+
 ```
 
 ## <a id="baremetal"></a>Barematal
