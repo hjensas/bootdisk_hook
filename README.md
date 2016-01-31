@@ -9,8 +9,13 @@ Because the hook needs to be started at create event, the hook has to fork a bac
 * [Background](#background)
 * [Installation](#installation)
   * [Create user in Foreman/Satellite 6](#foreman-user)
-  * [Configure hammer to use our user](#hammer-passwd)
-  * [Configure sudo](#configure sudo)
+  * [Configure hammer to use our user without prompting for password](#hammer-passwd)
+  * [Configure sudo](#sudo)
+  * [oVirt/RHEV](#ovirt)
+* [Configuration file](#config-file)
+* [SELinux](#selinux)
+* [Baremetal](#baremetal)
+
 
 ## <a id="background"></a>Backround
 When DHCP servers are not available in all subnets the foreman bootdisk ISO
@@ -19,13 +24,13 @@ imaga can be used to bootstrap a systems and start a kickstart installation.
 To make the process of provisioning systems automatic these hooks will
 automate the following tasks:
 
-### When a host is created, or placed in build mode the hook will:
+#### When a host is created, or placed in build mode the hook will:
 1. Download the bootdisk ISO from satellite
 2. For compute resources, upload the ISO to: RHEV ISO Domain, VMWare datastore etc.
 3. Connect the bootdisk ISO image to the host.
 4. Configure the host to boot from CD-Rom.
 
-### When the kicstart reports to foreman that the host is built
+#### When the kicstart reports to foreman that the host is built
 1. Wait for the VM to shutdown. (Kickstart need to be configured to do a poweroff, not a reboot)
 2. Remove/Disconnect/Unmount the ISO image from the host.
 3. Reconfigure the host to boot from hard drive.
@@ -35,7 +40,8 @@ automate the following tasks:
 
 ### <a id="foreman-user"></a>Create user in Foreman/Satellite 6
 
-The hooks use hammer and the Foreman/Satellite 6 REST API, for this we create a user for this instead of using the admin account.
+The hooks use hammer and the Foreman/Satellite 6 REST API, create a user for the hook and 
+add the just the required roles instead of using the admin account.
 
 #### Create the user
 ```
@@ -58,7 +64,7 @@ hammer user add-role --login bootdisk2 --role "View hosts"
 hammer user add-role --login bootdisk2 --role "Boot disk access"
 ```
 
-### <a id="hammer-passwd"></a>Configure hammer to use our user
+### <a id="hammer-passwd"></a>Configure hammer to use our user without prompting for password
 
 The hook is running as user foreman, we need to setup hammer cli_config for this user to use the bootdisk user, and not prompt for a password.
 
@@ -87,7 +93,7 @@ chown -R foreman:foreman /usr/share/foreman/.hammer
 chmod 0600 /usr/share/foreman/.hammer/cli_config.yml
 ```
 
-### Configure sudo
+### <a id="sudo"></a>Configure sudo
 
 Sudo must be configured to allow the foreman user to run /usr/bin/logger.
 
@@ -110,7 +116,7 @@ foreman ALL=(ALL) NOPASSWD:/usr/bin/logger
 EOF
 ```
 
-## RHEV
+## <a id="ovirt"></a>oVirt/RHEV
 
 ### RHEV/Ovirt Specific sudo rules and users
 
@@ -136,8 +142,7 @@ echo "rhevm.lnx.example.com:/var/lib/exports/iso /iso_domain   nfs _netdev,defau
 ```
 
 
-
-## Configuration file
+## <a id="config-file"></a>Configuration file
 
 The bootdisk_hook scripts expects to find its configuration file in
 /etc/foreman/hooks/foreman_bootdisk.conf. The configurationf file is
@@ -206,11 +211,11 @@ on the NFS server where ISO files is stores.
 
 e.g:  /nfs_mnt/<uuid>/images/<111...>
 
-## SELinux
+## <a id="selinux"></a>SELinux
 
 TODO 
 
-## Barematal
+## <a id="baremetal"></a>Barematal
 
 The scripts in this repo does not contain any baremetal support, but adding such support using
 hardware vendor remote management controller with support for virtual media is possible. 
