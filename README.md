@@ -5,6 +5,13 @@ The hook will check if there is DHCP enabled on the subnet and just exit if this
 
 Because the hook needs to be started at create event, the hook has to fork a background process that will wait for the host object to be available in foreman and then continue the provisioning operation. Unless we do this, the host is not available when the hook tries to download the bootdisk image. (Using the after_create event was attempted, but the host object is not in foreman even after the after_create event)
 
+# Table of Contents
+1. [Background](#Background)
+2. [Installation](#Installation)
+2.1 [Create user in Foreman/Satellite 6](#Create user in Foreman/Satellite 6)
+2.2 [Configure hammer to use our user](#Configure hammer to use our user)
+2.3 [Configure sudo](#Configure sudo)
+
 ## Backround
 When DHCP servers are not available in all subnets the foreman bootdisk ISO
 imaga can be used to bootstrap a systems and start a kickstart installation.
