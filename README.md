@@ -7,12 +7,14 @@ Because the hook needs to be started at create event, the hook has to fork a bac
 
 # Table of Contents
 * [Background](#background)
-* [Installation](#installation)
+* [Setup](#setup)
   * [Create user in Foreman/Satellite 6](#foreman-user)
   * [Configure hammer to use our user without prompting for password](#hammer-passwd)
   * [Configure sudo](#sudo)
   * [oVirt/RHEV](#ovirt)
-* [Configuration file](#config-file)
+  * [Configuration file](#config-file)
+  * [Set up the hook directory structure](#hook-struct)
+  * [Create symlinks to the hook for each event](#hook-symlinks)
 * [SELinux](#selinux)
 * [Baremetal](#baremetal)
 
@@ -36,7 +38,7 @@ automate the following tasks:
 3. Reconfigure the host to boot from hard drive.
 4. Start the host.
 
-## <a id="installation"></a>Installation
+## <a id="setup"></a>Setup
 
 ### <a id="foreman-user"></a>Create user in Foreman/Satellite 6
 
@@ -214,6 +216,27 @@ e.g:  /nfs_mnt/<uuid>/images/<111...>
 ## <a id="selinux"></a>SELinux
 
 TODO 
+
+## <a id="hook-struct"></a>Set up the hook directory structure
+
+Foreman hooks are stored under /usr/share/foreman/config/hooks, dirctories for
+objects and subdirectories for events. In this case we need to create the following structure.
+
+```
+└── host
+    └── managed
+        ├── after_build
+        ├── after_provision
+        └── create
+```
+
+## <a id="hook-symlinks"></a>Create symlinks to the hook for each event.
+
+```
+ln -s /usr/share/foreman/config/bootdisk_hook/bootdisk_hook host/managed/create/20_bootdisk_hook
+ln -s /usr/share/foreman/config/bootdisk_hook/bootdisk_hook host/managed/after_provision/20_bootdisk_hook
+ln -s /usr/share/foreman/config/bootdisk_hook/bootdisk_hook host/managed/after_build/20_bootdisk_hook
+```
 
 ## <a id="baremetal"></a>Barematal
 
