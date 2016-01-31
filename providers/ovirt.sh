@@ -19,7 +19,7 @@ function iso_domain_upload() {
   #
   log_info "Copying ISO to ISO_DOMAIN..."
   local iso_file=${BOOT_DISK_STORE}/${hook_object}.iso
-  sudo -u vdsm cp -v ${iso_file} ${RHEV_ISO_DOMAIN_PATH} > /tmp/${hook_object}-iso_upload.log 2>&1 &&
+  sudo -u vdsm cp -v ${iso_file} ${OVIRT_ISO_DOMAIN_PATH} > /tmp/${hook_object}-iso_upload.log 2>&1 &&
       { log_info "Foreman bootdisk copy to ISO domain done"; } ||
       { log_err "Foreman bootdisk copy to ISO domain failed"; exit 1; }
 
@@ -43,8 +43,8 @@ function iso_domain_upload() {
 function iso_domain_delete() {
   local hook_object=$1
   # The wildcards mask UUID folders..., lets hope the structure does'nt change?
-  if test -f ${RHEV_ISO_DOMAIN_PATH}/${hook_object}.iso; then
-    sudo -u vdsm rm -f ${RHEV_ISO_DOMAIN_PATH}/${hook_object}.iso &&
+  if test -f ${OVIRT_ISO_DOMAIN_PATH}/${hook_object}.iso; then
+    sudo -u vdsm rm -f ${OVIRT_ISO_DOMAIN_PATH}/${hook_object}.iso &&
       { log_info "Delete ${hook_object}.iso from ISO Domain done"; } ||
       { log_err "Delete ${hook_object}.iso from ISO Domain failed"; exit 1; }
   fi
@@ -71,8 +71,8 @@ function ovirt_boot_once() {
   opts="${opts} --isofile ${hook_object}.iso"
 
   log_info "Configuring boot once and starting vm: ${vm_uuid}"
-  log_debug "${HOOK_DIR}/scripts/rhev-rest-client.rb ${opts}"
-  ${HOOK_DIR}/scripts/rhev-rest-client.rb ${opts} &&
+  log_debug "${HOOK_DIR}/providers/ovirt.rb ${opts}"
+  ${HOOK_DIR}/providers/ovirt.rb ${opts} &&
     { log_info "Boot once vm: $vm_uuid success"; } ||
     { log_err "Boot once vm: $vm_uuid failed"; exit 1; }
 }
@@ -98,7 +98,7 @@ function ovirt_post_provision() {
   opts="${opts} --isofile ${hook_object}.iso"
 
   log_info "Running post provisioning tasks for vm: ${vm_uuid}"
-  ${HOOK_DIR}/scripts/rhev-rest-client.rb ${opts} &&
+  ${HOOK_DIR}/providers/ovirt.rb ${opts} &&
     { log_info "Post-provsioning vm: ${vm_uuid} success"; } ||
     { log_err "Post-Provisioning vm: ${vm_uuid} failed"; exit 1; }
 }
