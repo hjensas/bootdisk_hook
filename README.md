@@ -1,6 +1,10 @@
 # bootdisk_hook
 Hook scripts for Foreman/Red Hat Satellite to provision hosts using the foreman bootdisk host image.
 
+The hook will check if there is DHCP enabled on the subnet and just exit if this is the case, this allows the hook to be used in a mixed environment where DHCP is enabled for some subnets.
+
+Because the hook needs to be started at create event, the hook has to fork a background process that will wait for the host object to be available in foreman and then continue the provisioning operation. Unless we do this, the host is not available when the hook tries to download the bootdisk image. (Using the after_create event was attempted, but the host object is not in foreman even after the after_create event)
+
 ## Backround
 When DHCP servers are not available in all subnets the foreman bootdisk ISO
 imaga can be used to bootstrap a systems and start a kickstart installation.
@@ -20,14 +24,190 @@ automate the following tasks:
 3. Reconfigure the host to boot from hard drive.
 4. Start the host.
 
-## Barematal
+## Installation
 
-The scripts in this repo does not contain any baremetal support, but adding such support using
-hardware vendor remote management (BMC) is possible. 
+### Create user in Foreman/Satellite 6
+
+The hooks use hammer and the Foreman/Satellite 6 REST API, for this we create a user for this instead of using the admin account.
+
+#### Create the user
+```
+hammer user create \
+  --firstname Boot \
+  --lastname Disk \
+  --login bootdisk \
+  --mail "admin@example.com" \
+  --organizations "Example ORG" \
+  --locations example_loc \
+  --auth-source-id 1 \
+  --password 85fb46a73ce646e48af68a4f3dead702
+```
+
+#### Add roles to the user
+
+```
+hammer user add-role --login bootdisk2 --role "Viewer"
+hammer user add-role --login bootdisk2 --role "View hosts"
+hammer user add-role --login bootdisk2 --role "Boot disk access"
+```
+
+### Configure hammer to use our user
+
+The hook is running as user foreman, we need to setup hammer cli_config for this user to use the bootdisk user, and not prompt for a password.
+
+```
+mkdir -p /usr/share/foreman/.hammer/cli_config.yml
+```
+
+```
+cat << EOF > /usr/share/foreman/.hammer/cli_config.yml
+:ui:
+  :interactive: false
+
+:foreman:
+    :enable_module: true
+    :host: 'https://sat61.lnx.example.com/'
+    :username: 'bootdisk'
+    :password: '85fb46a73ce646e48af68a4f3dead702'
+EOF
+```
+
+```
+chown -R foreman:foreman /usr/share/foreman/.hammer
+```
+
+```
+chmod 0600 /usr/share/foreman/.hammer/cli_config.yml
+```
+
+### Configure sudo
+
+Sudo must be configured to allow the foreman user to run /usr/bin/logger.
+
+```
+cat << EOF > /etc/sudoers.d/foreman-hooks 
+#
+# The requiretty default is a non-sensible default.
+#   it does not add any benefits, but it breaks valid sudo usage.
+#
+#  See https://bugzilla.redhat.com/show_bug.cgi?id=1020147 for details.
+#
+# The default on RHEL is to require a tty.
+# To allow the bootdisk hook to use sudo, we are disabling requiretty for the
+# foreman user.
+#
+Defaults:foreman !requiretty
+
+#
+foreman ALL=(ALL) NOPASSWD:/usr/bin/logger
+EOF
+```
 
 ## RHEV
 
-TODO
+### RHEV/Ovirt Specific sudo rules and users
+
+For RHEV/Ovirt we also need to run cp and rm as the vdsm user to upload the bootdisk ISO file to the ISO Domain. This is needed to set the correct user/group on the file when copying it to the ISO Domain.
+
+#### Create RHEV/Ovirt specific users/groups
+
+```
+groupadd -g 36 kvm
+useradd --system -u 36 -g 36 --no-create-home --shell /bin/nologin vdsm
+```
+
+#### Add RHEV/Ovirt spcific sudorules
+```
+echo "foreman ALL=(vdsm) NOPASSWD:/bin/cp" >> /etc/sudoers.d/foreman-hooks
+echo "foreman ALL=(vdsm) NOPASSWD:/bin/rm" >> /etc/sudoers.d/foreman-hooks
+```
+
+### Mount the RHEV/Ovirt ISO Domain to the Foreman/Satellite 6 server
+
+```
+echo "rhevm.lnx.example.com:/var/lib/exports/iso /iso_domain   nfs _netdev,defaults 0 0" >> /etc/fstab
+```
+
+
+
+## Configuration file
+
+The bootdisk_hook scripts expects to find its configuration file in
+/etc/foreman/hooks/foreman_bootdisk.conf. The configurationf file is
+a shellvar file that is sourced by the hook scripts. The parameters are
+specified below.
+
+The directory /etc/foreman/hooks does not exist by default, this should be
+creted.
+
+```
+mkdir -p /etc/foreman/hooks
+```
+
+Since the configuration file contains password for the foreman/satellite 6
+user it makes sense to limit the permissions...
+
+```
+chown foreman:foreman /etc/foreman/hooks/foreman_bootdisk.conf
+chmod 0600 /etc/foreman/hooks/foreman_bootdisk.conf
+```
+
+### HOOK_DIR
+
+The directory where the hook scripts live.
+
+### LOG_LEVEL
+
+Log levels debug, info or error is supported.
+
+### MAX_RETRY_ATTEMPTS
+
+Controls how many times we try to perform tasks/checks that might
+not complete. Such as waiting for the foreman host object to be 
+completely created.
+
+### BASE_RETRY_INTERVAL
+
+Time in seconds to wait before retrying a task/check. This number is multiplied
+with for each attempt to increase the wait time for each iteration.
+
+### USE_FULL_HOST_IMAGE
+
+Wheater to use the full foreman bootdisk, if false the iPXE image will be used.
+
+### BOOT_DISK_STORE
+
+The local directory where bootdisk ISO's are stored.
+
+### FOREMAN_HOST
+
+The FQDN of the foreman/satellite 6 server.
+
+### FOREMAN_USER
+
+Foreman user username
+
+### FOREMAN_PASSWD
+
+Foreman user password
+
+### OVIRT_ISO_DOMAIN_PATH
+
+The oVirt/RHEV iso domain needs to be mounted on the foreman/satellite
+server. The OVIRT_ISO_DOMAIN_PATH points the full path to the directory 
+on the NFS server where ISO files is stores.
+
+e.g:  /nfs_mnt/<uuid>/images/<111...>
+
+## SELinux
+
+TODO 
+
+## Barematal
+
+The scripts in this repo does not contain any baremetal support, but adding such support using
+hardware vendor remote management controller with support for virtual media is possible. 
+
 
 ## VMWare
 
