@@ -15,6 +15,7 @@ Because the hook needs to be started at create event, the hook has to fork a bac
   * [Configuration file](#config-file)
   * [Set up the hook directory structure](#hook-struct)
   * [Create symlinks to the hook for each event](#hook-symlinks)
+  * [Change templates to not requre DHCP](#no_dhcp_templates)
 * [SELinux](#selinux)
 * [Baremetal](#baremetal)
 
@@ -117,6 +118,18 @@ Defaults:foreman !requiretty
 foreman ALL=(ALL) NOPASSWD:/usr/bin/logger
 EOF
 ```
+
+## <a id="no_dhcp_templates"></a>Change templates to not requre DHCP
+
+By default the provisioning templates will create a bootdisk that require a DHCP
+server. To generate bootdisk images that does not require a DHCP server the iPXE
+and/or PXELINUX templates must be modified to pass network configuration to
+Anaconda by appending the configuration on kernel command line.
+
+Lukas Zapletal wrote this excellent blog article which explain how to modify the
+templates:
+
+  https://lukas.zapletalovi.com/2015/10/foreman-and-pxe-less-environments.html
 
 ## <a id="ovirt"></a>oVirt/RHEV
 
