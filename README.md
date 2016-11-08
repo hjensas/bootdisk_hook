@@ -8,6 +8,7 @@ Because the hook needs to be started at create event, the hook has to fork a bac
 # Table of Contents
 * [Background](#background)
 * [Setup](#setup)
+  * [Install dependencies](#dependencies)
   * [Create user in Foreman/Satellite 6](#foreman-user)
   * [Configure hammer to use our user without prompting for password](#hammer-passwd)
   * [Configure sudo](#sudo)
