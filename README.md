@@ -42,7 +42,7 @@ automate the following tasks:
 
 ## <a id="setup"></a>Setup
 
-### <a id="dependecies"></a>Install dependencies
+### <a id="dependencies"></a>Install dependencies
 
 
 
