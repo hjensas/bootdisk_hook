@@ -27,10 +27,6 @@ source /etc/foreman/hooks/foreman_bootdisk.conf
 source ${HOOK_DIR}/functions/hook_functions.sh
 source ${HOOK_DIR}/functions/bootdisk_functions.sh
 
-log_debug "HOOK_OBJECT_FILE=${HOOK_OBJECT_FILE}"
-log_debug "HOOK DATA = $(cat ${HOOK_OBJECT_FILE})"
-log_debug "Build MODE = $(hook_data host.build)"
-
 #
 # If DHCP is enabled for the subnet
 # we do not want to run the hook...
