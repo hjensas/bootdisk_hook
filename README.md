@@ -8,10 +8,10 @@ Because the hook needs to be started at create event, the hook has to fork a bac
 # Table of Contents
 * [Background](#background)
 * [Setup](#setup)
-
   * [Create user in Foreman/Satellite 6](#foreman-user)
   * [Configure hammer to use our user without prompting for password](#hammer-passwd)
   * [Configure sudo](#sudo)
+  * [.cache directory in foreman useds $HOME](#.cache_dir)
   * [oVirt/RHEV](#ovirt)
   * [Configuration file](#config-file)
   * [Set up the hook directory structure](#hook-struct)
@@ -118,6 +118,16 @@ Defaults:foreman !requiretty
 #
 foreman ALL=(ALL) NOPASSWD:/usr/bin/logger
 EOF
+```
+
+### <a id=".cache_dir"></>.cache directory in foreman useds $HOME
+
+hammer might need a .cache directory in $HOME/.cache for bootdisk downloads to
+work.
+
+```
+mkdir /usr/share/foreman/.cache
+chown foreman:foreman /usr/share/foreman/.cache
 ```
 
 ## <a id="no_dhcp_templates"></a>Change templates to not requre DHCP
