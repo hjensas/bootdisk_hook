@@ -2,9 +2,10 @@
 # Check if build mode is enabled for the host
 #
 function is_build_enabled() {
-  if [ "$(hook_data host.build)" == "true" ]; then
+  if [ "$(hook_data host.build)" == "True" ]; then
     return 0
   fi
+  log_debug "Build mode: $(hook_data host.build)"
   return 1
 }
 
@@ -14,7 +15,7 @@ function is_build_enabled() {
 function is_dhcp_enabled() {
   local subnet_id=$(hook_data host.subnet_id)
   local cmd_hammer="hammer --output json subnet info --id"
-  $cmd_hammer ${subnet_id} | jgrep -s DHCP > /dev/null 2>&1 &&
+  $cmd_hammer ${subnet_id} | ${HOOK_DIR}/utils/json_grep.py DHCP &&
     { log_debug "Subnet ID: ${subnet_id}, DHCP enabled"; return 0; } ||
     { log_debug "Subnet ID: ${subnet_id}, DHCP disabled"; return 1; }
 }
@@ -35,9 +36,9 @@ function provider_resolve() {
     CR_PROVIDER="idrac" # defalt to Dell idrac for now...
   else
     cr_info=$(hammer --output json compute-resource info --id ${CR_ID})
-    CR_PROVIDER=$(echo ${cr_info} | jgrep -s Provider)
-    CR_URL=$(echo ${cr_info} | jgrep -s Url)
-    CR_USER=$(echo ${cr_info} | jgrep -s User)
+    CR_PROVIDER=$(echo ${cr_info} | ${HOOK_DIR}/utils/json_grep.py Provider)
+    CR_URL=$(echo ${cr_info} | ${HOOK_DIR}/utils/json_grep.py Url)
+    CR_USER=$(echo ${cr_info} | ${HOOK_DIR}/utils/json_grep.py User)
     query_sql="SELECT password FROM compute_resources WHERE id = ${CR_ID}"
     opts_sql="-A --tuples-only --dbname=foreman --command="
     CR_PASSWD=$(psql ${opts_sql}"${query_sql}")
@@ -52,7 +53,7 @@ function provider_resolve() {
 function provider_provision() {
     case "$CR_PROVIDER" in
       Libvirt)
-        libvirt_provision
+        libvirt_provision $HOOK_EVENT $CR_ID $CR_URL
       ;;
       VMWare|VMware)
         ${HOOK_DIR}/providers/vmware.rb \

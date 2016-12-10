@@ -39,10 +39,6 @@ function log_err() {
 # 
 #
 function hook_data() {
-  if [ $# -eq 1 ]; then
-    jgrep -s "$1" < $HOOK_OBJECT_FILE
-  else
-    jgrep "$*" < $HOOK_OBJECT_FILE
-  fi
+  ${HOOK_DIR}/utils/json_grep.py "$1" < $HOOK_OBJECT_FILE
 }
 

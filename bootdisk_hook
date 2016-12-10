@@ -15,6 +15,7 @@ HOOK_OBJECT=$2  # FQDN of host
 HOOK_OBJECT_FILE=$(mktemp -t foreman_hooks.XXXXXXXXXX)
 cat > $HOOK_OBJECT_FILE
 
+
 #
 # Source the configuration file
 #
@@ -26,21 +27,9 @@ source /etc/foreman/hooks/foreman_bootdisk.conf
 source ${HOOK_DIR}/functions/hook_functions.sh
 source ${HOOK_DIR}/functions/bootdisk_functions.sh
 
-#
-# Check dependencies are installed
-#
-which jgrep &&
-  { log_debug "Dependency jgrep, rubygem-jgrep, is installed"; } ||
-  { log_err "Dependency jgrep, rubygem-jgrep, is missing"; exit 1; }
-
-
-#
-# Check if Build is enabled, if not we should just exit
-#
-# TODO
-is_build_enabled &&
-  { log_debug "Build is enabled"; } ||
-  { log_debug "Build is not enabled, not running bootdisk hook"; exit 0; }
+log_debug "HOOK_OBJECT_FILE=${HOOK_OBJECT_FILE}"
+log_debug "HOOK DATA = $(cat ${HOOK_OBJECT_FILE})"
+log_debug "Build MODE = $(hook_data host.build)"
 
 #
 # If DHCP is enabled for the subnet
@@ -52,7 +41,7 @@ is_dhcp_enabled &&
 
 
 #
-# 
+# Main 
 #
 OPTS="${HOOK_EVENT} ${HOOK_OBJECT} ${HOOK_OBJECT_FILE}"
 CMD_FOREMAN_OBJECT_WAIT="${HOOK_DIR}/foreman_object_wait ${OPTS}"
@@ -70,8 +59,8 @@ case "$HOOK_EVENT" in
   create)
     # If build mode is not enabled, we do not want to run the hook...
     is_build_enabled &&
-      { log_debug "Build mode enabled, running bootdisk hook"; } ||
-      { log_debug "Build mode disabled, not running bootdisk hook"; exit 0; }
+      { log_info "Build mode enabled, running bootdisk hook"; } ||
+      { log_info "Build mode disabled, not running bootdisk hook"; exit 0; }
     # Run the commands as background task.
     # Only continue if previous command succeded.
     nohup /bin/bash \
@@ -86,11 +75,15 @@ case "$HOOK_EVENT" in
     disown
   ;;
   after_build)
+    is_build_enabled &&
+      { log_info "Build mode enabled, running bootdisk hook"; } ||
+      { log_info "Build mode disabled, not running bootdisk hook"; exit 0; }
     nohup /bin/bash \
       -c "${CMD_BOOTDISK_GET} &&
           ${CMD_BOOTDISK_PROVISION} &&
           ${CMD_RM_HOOK_OBJECT_FILE} || ${CMD_RM_HOOK_OBJECT_FILE}" \
           > /dev/null 2>&1 &
+    disown
   ;;
   after_provision)
     nohup /bin/bash \
@@ -98,6 +91,7 @@ case "$HOOK_EVENT" in
           ${CMD_BOOTDISK_GET} &&
           ${CMD_RM_HOOK_OBJECT_FILE} || ${CMD_RM_HOOK_OBJECT_FILE}" \
           > /dev/null 2>&1 &
+    disown
   ;;
   destroy)
     # NOOP

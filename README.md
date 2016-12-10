@@ -8,7 +8,7 @@ Because the hook needs to be started at create event, the hook has to fork a bac
 # Table of Contents
 * [Background](#background)
 * [Setup](#setup)
-  * [Install dependencies](#dependencies)
+
   * [Create user in Foreman/Satellite 6](#foreman-user)
   * [Configure hammer to use our user without prompting for password](#hammer-passwd)
   * [Configure sudo](#sudo)
@@ -41,28 +41,6 @@ automate the following tasks:
 4. Start the host.
 
 ## <a id="setup"></a>Setup
-
-### <a id="dependencies"></a>Install dependencies
-
-
-
-In Red Hat Satellite 6.2 (Foreman 1.11) there are missing GEM dependences: jgrep and json_pure.
-
-These can be installed using ruby's gem install command, or by installing the rubygem-jgrep package from EPEL.
-
-
-#### Using ruby's gem install:
-```
-scl enable tfm bash
-gem install jgrep
-gem install json_pure
-```
-
-#### Installing from EPEL
-
-```
-yum install rubygem-jgrep-1.3.3-3.el7.noarch.rpm
-```
 
 ### <a id="foreman-user"></a>Create user in Foreman/Satellite 6
 
