@@ -27,9 +27,20 @@ source ${HOOK_DIR}/functions/hook_functions.sh
 source ${HOOK_DIR}/functions/bootdisk_functions.sh
 
 #
+# Check dependencies are installed
+#
+which jgrep &&
+  { log_debug "Dependency jgrep, rubygem-jgrep, is installed"; } ||
+  { log_err "Dependency jgrep, rubygem-jgrep, is missing"; exit 1; }
+
+
+#
 # Check if Build is enabled, if not we should just exit
 #
 # TODO
+is_build_enabled &&
+  { log_debug "Build is enabled"; } ||
+  { log_debug "Build is not enabled, not running bootdisk hook"; exit 0; }
 
 #
 # If DHCP is enabled for the subnet
