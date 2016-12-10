@@ -9,8 +9,8 @@ if not len(sys.argv) is 2:
 keys = sys.argv[1].split('.')
 for key in keys:
   data = data.get(key)
-  if not data:
-    print "key does not exist"
+  if data is None:
+    print "key does is not exist"
     quit(1)
 print data
 quit()
